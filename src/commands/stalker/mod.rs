@@ -1,9 +1,11 @@
 //! Processing for actions based on passively reading regular, non-command messages
 
+mod memes;
 mod arch;
 mod birbs;
 mod gnu;
 
+use memes::is_meme;
 use arch::is_arch;
 use birbs::{is_bird, BURD};
 use gnu::{is_gnu, STALLMAN};
@@ -46,6 +48,10 @@ pub async fn normal_message(ctx: &Context, msg: &Message) {
         if let Err(why) = msg.reply_ping(&ctx.http, STALLMAN).await {
             error!("Failed to actually: {:?}", why);
         }
+    } else if let Some(url) = is_meme(&scontent) {
+        if let Err(why) = msg.reply_ping(&ctx.http, url).await {
+            error!("Failed to send meme: {:?}", why);
+        };
     } else if msg.content.matches(' ').count() > 40 {
         if let Err(why) = msg.reply_ping(&ctx.http, ":woah:... chill out").await {
             error!("Failed to woah: {:?}", why);
