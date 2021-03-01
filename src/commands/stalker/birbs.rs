@@ -24,6 +24,10 @@ static BIRDS: &[&str] = &[
     "feathered biped",
     "avian",
     "chirp",
+    "chirrido",
+    "torin",
+    "jackie",
+    "jaqueline",
 ];
 
 /// Detects whether a message warrants a "bird up"
