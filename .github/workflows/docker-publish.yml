@@ -40,6 +40,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/trashbot:nightly
+          platforms: linux/arm64
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
