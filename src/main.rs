@@ -82,5 +82,7 @@ async fn main() -> Result<(), ()> {
         error!("Client error: {:?}", why);
     }
 
+    let unused = 1;
+
     Ok(())
 }
