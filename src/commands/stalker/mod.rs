@@ -4,15 +4,12 @@ mod arch;
 mod birbs;
 mod gnu;
 
+use crate::utils::lookup_and_cache;
 use arch::is_arch;
 use birbs::{is_bird, BURD};
 use gnu::{is_gnu, STALLMAN};
 use log::error;
-use serenity::{
-    client::Context,
-    framework::standard::macros::hook,
-    model::{channel::Message, id::EmojiId, misc::EmojiIdentifier},
-};
+use serenity::{client::Context, framework::standard::macros::hook, model::channel::Message};
 use std::iter::repeat;
 
 /// Responses to normal messages i.e. not commands
@@ -22,7 +19,7 @@ use std::iter::repeat;
 /// TODO: Tweak the space count on the "woah" reaction. Too much? Too little? Also come up with
 /// better snark
 ///
-/// TODO: Abstract out the guild emojis, at least collect them into a common location as statics
+/// TODO: Is there a more elegant way to implement this pattern?
 #[hook]
 pub async fn normal_message(ctx: &Context, msg: &Message) {
     let scontent = msg.content.to_lowercase();
@@ -33,22 +30,28 @@ pub async fn normal_message(ctx: &Context, msg: &Message) {
             error!("Failed to bird up: {:?}", why);
         };
     } else if is_arch(&scontent) {
-        let emoj = EmojiIdentifier {
-            animated: false,
-            id: EmojiId(727294348965707786),
-            name: "arch_btw".to_string(),
-        };
-
-        if let Err(why) = msg.react(&ctx.http, emoj).await {
-            error!("Failed to btw: {:?}", why);
+        if let Some(emoj) =
+            lookup_and_cache(msg.guild(ctx).await.unwrap().id, ctx, "arch_btw").await
+        {
+            if let Err(why) = msg.react(&ctx.http, emoj).await {
+                error!("Failed to btw: {:?}", why);
+            }
         }
     } else if is_gnu(&scontent) {
         if let Err(why) = msg.reply_ping(&ctx.http, STALLMAN).await {
             error!("Failed to actually: {:?}", why);
         }
     } else if msg.content.matches(' ').count() > 40 {
-        if let Err(why) = msg.reply_ping(&ctx.http, ":woah:... chill out").await {
-            error!("Failed to woah: {:?}", why);
+        if let Some(woah) = lookup_and_cache(msg.guild(ctx).await.unwrap().id, ctx, "woah").await {
+            if let Err(why) = msg
+                .reply_ping(
+                    &ctx.http,
+                    format!("<:{}:{}>... chill out", woah.name, woah.id,),
+                )
+                .await
+            {
+                error!("Failed to woah: {:?}", why);
+            }
         }
     }
 }

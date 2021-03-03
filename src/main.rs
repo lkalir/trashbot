@@ -2,6 +2,7 @@
 //! day, I believe trash-bot will change the world.
 
 mod commands;
+mod utils;
 
 use commands::{after, before, normal_message, unknown_command};
 use log::{error, info};
