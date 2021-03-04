@@ -5,5 +5,5 @@ A garbage bot for a garbage server. It won't work on your server so don't even t
 ## Usage
 
 ```bash
-DISCORD_TOKEN=<TOKEN> RUST_LOG=<LEVEL> cargo run --release
+DISCORD_TOKEN=<TOKEN> GITHUB_TOKEN=<TOKEN> RUST_LOG=<LEVEL> cargo run --release
 ```

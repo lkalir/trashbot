@@ -2,6 +2,7 @@
 
 mod about;
 mod stalker;
+mod wha_happun;
 
 use about::*;
 use log::{error, info, warn};
@@ -16,6 +17,7 @@ use serenity::{
 };
 pub use stalker::normal_message;
 use std::collections::HashSet;
+use wha_happun::*;
 
 #[help]
 #[command_not_found_text = "Could not find: '{}'."]
@@ -66,5 +68,5 @@ pub async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_nam
 }
 
 #[group]
-#[commands(about)]
+#[commands(about, wha_happun)]
 pub struct General;
