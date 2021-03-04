@@ -1,6 +1,7 @@
 //! The actions the bot can take
 
 mod about;
+mod recap;
 mod stalker;
 mod wha_happun;
 
@@ -18,6 +19,7 @@ use serenity::{
 pub use stalker::normal_message;
 use std::collections::HashSet;
 use wha_happun::*;
+use recap::*;
 
 #[help]
 #[command_not_found_text = "Could not find: '{}'."]
@@ -68,5 +70,5 @@ pub async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_nam
 }
 
 #[group]
-#[commands(about, wha_happun)]
+#[commands(about, wha_happun, recap)]
 pub struct General;

@@ -1,4 +1,4 @@
-use std::env;
+//! Summarize recent changes
 
 use graphql_client::*;
 use log::warn;
@@ -8,6 +8,7 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
 };
+use std::env;
 
 // Procedural macro power!
 #[derive(GraphQLQuery, Serialize)]
