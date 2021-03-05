@@ -1513,6 +1513,8 @@ dependencies = [
  "graphql_client",
  "log",
  "once_cell",
+ "rand 0.8.3",
+ "regex",
  "reqwest",
  "serde",
  "serenity",
