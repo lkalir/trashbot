@@ -62,8 +62,8 @@ async fn main() -> Result<(), ()> {
         .configure(|c| {
             c.with_whitespace(true)
                 .on_mention(Some(bot_id))
-                .prefix("~")
-                .delimiters(vec![", ", ","])
+                .prefix("!")
+                .delimiters(vec![" "])
                 .owners(owners)
         })
         .before(before)
