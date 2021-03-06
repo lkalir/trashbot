@@ -9,7 +9,7 @@ mod wha_happun;
 
 use about::*;
 use laprate::*;
-use levelup::*;
+use levelup::{delete::*, level::*, wlaw::*};
 use log::{error, info, warn};
 use recap::*;
 use serenity::{
@@ -45,10 +45,19 @@ pub async fn my_help(
 
 /// Callback called before any command is processed
 #[hook]
-pub async fn before(_ctx: &Context, msg: &Message, command_name: &str) -> bool {
+pub async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
     info!(
-        "Got command '{}' by user '{}'",
-        command_name, msg.author.name
+        "Got command '{}' by user '{}' from '{}' in '{}'",
+        command_name,
+        msg.author.name,
+        msg.guild(ctx)
+            .await
+            .map(|g| g.name)
+            .unwrap_or_else(|| "???".to_string()),
+        msg.channel_id
+            .name(ctx)
+            .await
+            .unwrap_or_else(|| "???".to_string())
     );
     true
 }
@@ -74,5 +83,5 @@ pub async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_nam
 }
 
 #[group]
-#[commands(about, wha_happun, recap, laprate, wlaw, level)]
+#[commands(about, wha_happun, recap, laprate, wlaw, level, delete)]
 pub struct General;

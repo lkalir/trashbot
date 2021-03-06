@@ -1,18 +1,17 @@
 //! Level tracking tools
+pub mod delete;
+pub mod level;
+pub mod wlaw;
 
-use log::{info, warn};
+use log::info;
 use once_cell::sync::Lazy;
 use serde::{
     de::{self, Visitor},
     Deserialize, Serialize,
 };
-use serenity::{
-    client::Context,
-    framework::standard::{macros::command, Args, CommandResult},
-    model::{channel::Message, id::GuildId},
-};
+use serenity::{framework::standard::CommandResult, model::id::GuildId};
 use smol_str::SmolStr;
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, io::ErrorKind};
 use tokio::{io::AsyncWriteExt, sync::Mutex};
 
 /// Wrapper type around SmolStr
@@ -113,66 +112,19 @@ impl LevelMapRecord {
     }
 }
 
-/// "What level are we?"
-#[command]
-#[num_args(1)]
-#[description = "What level you should be in a campaign"]
-#[only_in(guilds)]
-#[usage = "campaign"]
-pub async fn wlaw(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let mut my_args = args.clone();
-    let campaign: SmolStr = my_args.single::<String>()?.into();
-
-    if let Some(level) = LEVEL_MAP
-        .lock()
-        .await
-        .get(&(msg.guild_id.unwrap(), MySmolStr(campaign.clone())))
-    {
-        if let Err(why) = msg
-            .channel_id
-            .say(&ctx.http, format!("'{}' is level {}", campaign, level))
-            .await
-        {
-            warn!("Failed to report campaign level: {:?}", why);
-        }
-    } else if let Err(why) = msg
-        .channel_id
-        .say(&ctx.http, format!("No such campaign '{}'", campaign))
-        .await
-    {
-        warn!("Failed to report campaign level: {:?}", why);
-    }
-    Ok(())
-}
-
-/// Set your levels
-#[command]
-#[min_args(1)]
-#[max_args(2)]
-#[only_in(guilds)]
-#[usage = "campaign [level between 0 and 255: default increment]"]
-pub async fn level(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let mut my_args = args.clone();
-    let campaign: SmolStr = my_args.single::<String>()?.into();
-    let level = *LEVEL_MAP
-        .lock()
-        .await
-        .entry((msg.guild_id.unwrap(), MySmolStr(campaign.clone())))
-        .and_modify(|l| *l = my_args.parse().unwrap_or(*l + 1))
-        .or_insert_with(|| my_args.parse().unwrap_or(1));
-
-    if let Err(why) = msg
-        .channel_id
-        .say(&ctx.http, format!("{} is now level {}", campaign, level))
-        .await
-    {
-        warn!("Failed to set campaign level {:?}", why);
-    }
-
-    // Save new levels to disk
-    let c = LevelMapRecord::map_to_vec(&*LEVEL_MAP.lock().await);
+/// Saves campaign db to disk
+async fn save_db(hm: &HashMap<(GuildId, MySmolStr), u8>) -> CommandResult {
+    let c = LevelMapRecord::map_to_vec(hm);
     let db = serde_json::to_string_pretty(&c)?;
     let path = env::var("DB_LOCATION").unwrap_or_else(|_| "campaigndb.json".to_string());
+
+    // File not found just means this is first call
+    if let Err(e) = tokio::fs::remove_file(&path).await {
+        if e.kind() != ErrorKind::NotFound {
+            return Err(e.into());
+        }
+    }
+
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
         .append(false)
