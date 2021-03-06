@@ -7,6 +7,7 @@ use serenity::{
     http::CacheHttp,
     model::{id::GuildId, misc::EmojiIdentifier},
 };
+use smol_str::SmolStr;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
 
@@ -14,7 +15,7 @@ use tokio::sync::Mutex;
 ///
 /// Need to use an async-compliant mutex instead of the standard library since this is used in
 /// async contexts
-static MOJI_CACHE: Lazy<Mutex<HashMap<(GuildId, String), EmojiIdentifier>>> =
+static MOJI_CACHE: Lazy<Mutex<HashMap<(GuildId, SmolStr), EmojiIdentifier>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// Looks up an emoji by name in a guild, adding it to a cache if not present
@@ -24,7 +25,7 @@ pub async fn lookup_and_cache(
     name: &str,
 ) -> Option<EmojiIdentifier> {
     let moj = &mut *MOJI_CACHE.lock().await;
-    match moj.get(&(guild, name.to_string())) {
+    match moj.get(&(guild, name.into())) {
         Some(e) => Some(e.clone()),
         None => {
             let mojis = ctx
@@ -42,7 +43,7 @@ pub async fn lookup_and_cache(
                     name: found_moji.name.clone(),
                 };
                 info!("Caching '{}' for guild {}", name, guild);
-                moj.insert((guild, name.to_string()), id.clone());
+                moj.insert((guild, SmolStr::new(name)), id.clone());
                 Some(id)
             } else {
                 warn!("Failed to lookup '{}' for guild {}", name, guild);

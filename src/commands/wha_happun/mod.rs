@@ -8,6 +8,7 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
 };
+use smol_str::SmolStr;
 use std::env;
 
 // Procedural macro power!
@@ -53,11 +54,12 @@ pub async fn wha_happun(ctx: &Context, msg: &Message, args: Args) -> CommandResu
                 if let commit_query::CommitQueryRepositoryObjectOn::Commit(com) = obj.on {
                     if let Some(nodes) = com.history.nodes {
                         // Build list of commits
-                        let mut updates: Vec<String> = nodes
+                        let mut updates: Vec<SmolStr> = nodes
                             .iter()
                             .filter_map(|node| node.as_ref())
                             .map(|node| {
                                 format!("* {} - {}", node.abbreviated_oid, node.message_headline)
+                                    .into()
                             })
                             .collect();
 

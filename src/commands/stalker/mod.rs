@@ -14,6 +14,7 @@ use gnu::{is_gnu, STALLMAN};
 use log::error;
 use rand::prelude::*;
 use serenity::{client::Context, framework::standard::macros::hook, model::channel::Message};
+use smol_str::SmolStr;
 use std::iter::repeat;
 
 /// Responses to normal messages i.e. not commands
@@ -29,7 +30,7 @@ pub async fn normal_message(ctx: &Context, msg: &Message) {
     let scontent = msg.content.to_lowercase();
 
     if is_bird(&scontent) {
-        let birds: String = repeat(":bird:").take(17).collect();
+        let birds: SmolStr = repeat(":bird:").take(17).collect();
         let mes = format!("{}\n{}\n{}", birds, BURD, birds);
         if let Err(why) = msg.reply_ping(&ctx.http, mes).await {
             error!("Failed to bird up: {:?}", why);

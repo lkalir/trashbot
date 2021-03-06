@@ -19,6 +19,7 @@ pub static LAP_RATE: Lazy<Mutex<HashMap<ChannelId, f64>>> =
 #[description = "Display or modify the *lap *lap frequency"]
 #[min_args(0)]
 #[max_args(1)]
+#[only_in(guilds)]
 #[usage = "[lap frequency, between 0 and 1]"]
 pub async fn laprate(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     if let Ok(new_rate) = args.clone().single() {
