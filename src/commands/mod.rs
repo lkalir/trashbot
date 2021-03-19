@@ -3,6 +3,7 @@
 mod about;
 mod laprate;
 mod levelup;
+mod lore;
 mod recap;
 mod stalker;
 mod wha_happun;
@@ -11,6 +12,7 @@ use about::*;
 use laprate::*;
 use levelup::{delete::*, level::*, wlaw::*};
 use log::{error, info, warn};
+use lore::*;
 use recap::*;
 use serenity::{
     client::Context,
@@ -83,5 +85,5 @@ pub async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_nam
 }
 
 #[group]
-#[commands(about, wha_happun, recap, laprate, wlaw, level, delete)]
+#[commands(about, wha_happun, recap, laprate, wlaw, level, delete, lore)]
 pub struct General;
