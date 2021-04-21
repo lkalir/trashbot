@@ -4,6 +4,7 @@ mod arch;
 mod birbs;
 mod clapclap;
 mod gnu;
+mod heart;
 
 use super::laprate::LAP_RATE;
 use crate::utils::lookup_and_cache;
@@ -11,9 +12,14 @@ use arch::is_arch;
 use birbs::{is_bird, BURD};
 use clapclap::is_lap;
 use gnu::{is_gnu, STALLMAN};
+use heart::is_heart;
 use log::error;
 use rand::prelude::*;
-use serenity::{client::Context, framework::standard::macros::hook, model::channel::Message};
+use serenity::{
+    client::Context,
+    framework::standard::macros::hook,
+    model::channel::{Message, ReactionType},
+};
 use smol_str::SmolStr;
 use std::iter::repeat;
 
@@ -46,6 +52,13 @@ pub async fn normal_message(ctx: &Context, msg: &Message) {
     } else if is_gnu(&scontent) {
         if let Err(why) = msg.reply_ping(&ctx.http, STALLMAN).await {
             error!("Failed to actually: {:?}", why);
+        }
+    } else if is_heart(&scontent) {
+        if let Err(why) = msg
+            .react(&ctx.http, ReactionType::Unicode("\u{2764}".to_string()))
+            .await
+        {
+            error!("Failed to heart: {:?}", why);
         }
     } else if let Some(lap) = is_lap(&scontent) {
         // Don't clap every time
