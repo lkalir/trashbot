@@ -1,7 +1,9 @@
 //! Thank people for their kind words
 
 /// List of good words
-static POSITIVES: &[&str] = &["thank", "right", "correct", "love"];
+static POSITIVES: &[&str] = &[
+    "thank", "thx", "right", "correct", "love", "yay", "hooray", "hurrah", "huzzah", "ty", "cool",
+];
 
 /// List of possible names for trashbot
 static TRASHBOT_NAMES: &[&str] = &["trashbot", "trash-bot", "trash bot", "trash_bot"];
