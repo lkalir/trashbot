@@ -45,44 +45,38 @@ pub async fn wha_happun(ctx: &Context, msg: &Message, args: Args) -> CommandResu
     res.error_for_status_ref()?;
 
     let body: Response<commit_query::ResponseData> = res.json().await?;
-    let mut found = false;
 
-    // Is this idiomatic rust's true power?
-    if let Some(data) = body.data {
-        if let Some(repo) = data.repository {
-            if let Some(obj) = repo.object {
-                if let commit_query::CommitQueryRepositoryObjectOn::Commit(com) = obj.on {
-                    if let Some(nodes) = com.history.nodes {
-                        // Build list of commits
-                        let mut updates: Vec<SmolStr> = nodes
-                            .iter()
-                            .filter_map(|node| node.as_ref())
-                            .map(|node| {
-                                format!("* {} - {}", node.abbreviated_oid, node.message_headline)
-                                    .into()
-                            })
-                            .collect();
-
-                        // Insert some discord formatting
-                        updates.insert(0, "```".into());
-                        updates.insert(0, "Here's what I learned to do recently!".into());
-                        updates.push("```".into());
-                        let update_msg = updates.join("\n");
-
-                        msg.channel_id.say(&ctx.http, update_msg).await?;
-
-                        // Set flag to indicate we actually succeeded
-                        found = true;
-                    }
-                }
+    // This is idiomatic rust's true power
+    if let Some(fut) = body
+        .data
+        .and_then(|data| data.repository)
+        .and_then(|repo| repo.object)
+        .and_then(|obj| {
+            if let commit_query::CommitQueryRepositoryObjectOn::Commit(com) = obj.on {
+                com.history.nodes
+            } else {
+                None
             }
-        }
-    }
-
-    if !found {
+        })
+        .map(|nodes| {
+            let mut updates: Vec<SmolStr> = nodes
+                .iter()
+                .filter_map(|node| node.as_ref())
+                .map(|node| {
+                    format!("* {} - {}", node.abbreviated_oid, node.message_headline).into()
+                })
+                .collect();
+            updates.insert(0, "```".into());
+            updates.insert(0, "Here's what I learned to do recently!".into());
+            updates.push("```".into());
+            let update_msg = updates.join("\n");
+            msg.channel_id.say(&ctx.http, update_msg)
+        })
+    {
+        fut.await?;
+        Ok(())
+    } else {
         warn!("Missing data from query");
-        return Err("Missing data from query".into());
+        Err("Missing data from query".into())
     }
-
-    Ok(())
 }
