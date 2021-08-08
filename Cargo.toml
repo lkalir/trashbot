@@ -1,7 +1,7 @@
 [package]
 name = "trashbot"
 version = "0.1.0"
-authors = ["Liam Kalir <liamkalir9595@gmail.com>"]
+authors = ["Liam Kalir <liam.kalir@pm.me>"]
 edition = "2018"
 
 [dependencies]

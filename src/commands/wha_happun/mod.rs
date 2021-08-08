@@ -80,10 +80,9 @@ pub async fn wha_happun(ctx: &Context, msg: &Message, args: Args) -> CommandResu
         let update_msg = updates.join("\n");
 
         msg.channel_id.say(&ctx.http, update_msg).await?;
+        Ok(())
     } else {
         warn!("Missing data from query");
-        return Err("Missing data from query".into());
+        Err("Missing data from query".into())
     }
-
-    Ok(())
 }

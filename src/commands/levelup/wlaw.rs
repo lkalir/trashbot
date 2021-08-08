@@ -11,6 +11,7 @@ use smol_str::SmolStr;
 
 /// "What level are we?"
 #[command]
+#[aliases(whatlevelarewe)]
 #[min_args(0)]
 #[max_args(1)]
 #[description = "What level you should be in a campaign"]
