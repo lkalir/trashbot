@@ -2,42 +2,24 @@
 
 use super::{save_db, MySmolStr, LEVEL_MAP};
 use log::warn;
-use serenity::{
-    client::Context,
-    framework::standard::{macros::command, Args, CommandResult},
-    model::channel::Message,
-};
+use serenity::model::id::GuildId;
 use smol_str::SmolStr;
 
 /// Delete campaign
-#[command]
-#[num_args(1)]
-#[only_in(guilds)]
-#[usage = "campaign"]
-pub async fn delete(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let mut my_args = args.clone();
-    let campaign: SmolStr = my_args.single_quoted::<String>()?.into();
+pub async fn delete(id: GuildId, campaign: SmolStr) -> String {
     if LEVEL_MAP
         .lock()
         .await
-        .remove_entry(&(msg.guild_id.unwrap(), MySmolStr(campaign.clone())))
+        .remove_entry(&(id, MySmolStr(campaign.clone())))
         .is_some()
     {
-        save_db(&*LEVEL_MAP.lock().await).await?;
-        if let Err(why) = msg
-            .channel_id
-            .say(&ctx.http, format!("Deleted '{}'", campaign))
-            .await
-        {
+        if let Err(why) = save_db(&*LEVEL_MAP.lock().await).await {
             warn!("Failed to delete campaign {:?}", why);
+            "memes".to_string()
+        } else {
+            format!("Deleted '{}'", campaign)
         }
-    } else if let Err(why) = msg
-        .channel_id
-        .say(&ctx.http, format!("No such campaign '{}'", campaign))
-        .await
-    {
-        warn!("Failed to delete campaign {:?}", why);
+    } else {
+        format!("No such campaign '{}'", campaign)
     }
-
-    Ok(())
 }
