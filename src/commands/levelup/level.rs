@@ -2,36 +2,22 @@
 
 use super::{save_db, MySmolStr, LEVEL_MAP};
 use log::warn;
-use serenity::{
-    client::Context,
-    framework::standard::{macros::command, Args, CommandResult},
-    model::channel::Message,
-};
+use serenity::model::id::GuildId;
 use smol_str::SmolStr;
 
 /// Set your levels
-#[command]
-#[min_args(1)]
-#[max_args(2)]
-#[only_in(guilds)]
-#[usage = "campaign [level between 0 and 255: default increment]"]
-pub async fn level(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let mut my_args = args.clone();
-    let campaign: SmolStr = my_args.single_quoted::<String>()?.into();
+pub async fn level(id: GuildId, amt: Option<u8>, campaign: SmolStr) -> String {
     let level = *LEVEL_MAP
         .lock()
         .await
-        .entry((msg.guild_id.unwrap(), MySmolStr(campaign.clone())))
-        .and_modify(|l| *l = my_args.parse().unwrap_or(*l + 1))
-        .or_insert_with(|| my_args.parse().unwrap_or(1));
+        .entry((id, MySmolStr(campaign.clone())))
+        .and_modify(|l| *l = amt.unwrap_or(*l + 1))
+        .or_insert_with(|| amt.unwrap_or(1));
 
-    if let Err(why) = msg
-        .channel_id
-        .say(&ctx.http, format!("'{}' is now level {}", campaign, level))
-        .await
-    {
-        warn!("Failed to set campaign level {:?}", why);
+    if let Err(why) = save_db(&*LEVEL_MAP.lock().await).await {
+        warn!("Fug: {}", why);
+        "Failed to set level".to_string()
+    } else {
+        format!("'{}' is now level {}", campaign, level)
     }
-
-    save_db(&*LEVEL_MAP.lock().await).await
 }

@@ -3,11 +3,6 @@
 use graphql_client::{GraphQLQuery, Response};
 use log::warn;
 use serde::Serialize;
-use serenity::{
-    client::Context,
-    framework::standard::{macros::command, Args, CommandResult},
-    model::channel::Message,
-};
 use smol_str::SmolStr;
 use std::env;
 
@@ -20,13 +15,8 @@ use std::env;
 struct CommitQuery;
 
 /// Messages the channel with the headlines of the latest commits to master
-#[command]
-#[description = "What's new in trashbot."]
-#[min_args(0)]
-#[max_args(1)]
-#[usage = "[number of commits: DEFAULT 5]"]
-pub async fn wha_happun(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let amt = args.clone().single().unwrap_or(5);
+pub async fn wha_happun(cnt: Option<i64>) -> Result<String, Box<dyn std::error::Error>> {
+    let amt = cnt.unwrap_or(5);
     let q = CommitQuery::build_query(commit_query::Variables { num: Some(amt) });
 
     // All the data we're after is all public, yet Github's api requires a token anyways
@@ -79,8 +69,7 @@ pub async fn wha_happun(ctx: &Context, msg: &Message, args: Args) -> CommandResu
         updates.push("```".into());
         let update_msg = updates.join("\n");
 
-        msg.channel_id.say(&ctx.http, update_msg).await?;
-        Ok(())
+        Ok(update_msg)
     } else {
         warn!("Missing data from query");
         Err("Missing data from query".into())

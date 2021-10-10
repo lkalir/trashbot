@@ -9,7 +9,7 @@ use serde::{
     de::{self, Visitor},
     Deserialize, Serialize,
 };
-use serenity::{framework::standard::CommandResult, model::id::GuildId};
+use serenity::model::id::GuildId;
 use smol_str::SmolStr;
 use std::{collections::HashMap, env, io::ErrorKind};
 use tokio::{io::AsyncWriteExt, sync::Mutex};
@@ -113,25 +113,35 @@ impl LevelMapRecord {
 }
 
 /// Saves campaign db to disk
-async fn save_db(hm: &HashMap<(GuildId, MySmolStr), u8>) -> CommandResult {
+async fn save_db(hm: &HashMap<(GuildId, MySmolStr), u8>) -> Result<(), String> {
     let c = LevelMapRecord::map_to_vec(hm);
-    let db = serde_json::to_string_pretty(&c)?;
+    let db = serde_json::to_string_pretty(&c);
+    if let Err(why) = db {
+        return Err(why.to_string());
+    }
     let path = env::var("DB_LOCATION").unwrap_or_else(|_| "campaigndb.json".to_string());
 
     // File not found just means this is first call
     if let Err(e) = tokio::fs::remove_file(&path).await {
         if e.kind() != ErrorKind::NotFound {
-            return Err(e.into());
+            return Err(e.to_string());
         }
     }
 
-    let mut file = tokio::fs::OpenOptions::new()
+    let file = tokio::fs::OpenOptions::new()
         .write(true)
         .append(false)
         .create(true)
         .open(path)
-        .await?;
-    file.write_all(db.as_bytes()).await?;
+        .await;
+
+    if let Err(why) = file {
+        return Err(why.to_string());
+    }
+
+    if let Err(why) = file.unwrap().write_all(db.unwrap().as_bytes()).await {
+        return Err(why.to_string());
+    }
 
     Ok(())
 }

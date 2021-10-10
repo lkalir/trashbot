@@ -1,31 +1,21 @@
 //! The actions the bot can take
 
-mod about;
-mod laprate;
-mod levelup;
-mod lore;
-mod recap;
+pub mod levelup;
 mod stalker;
-mod wha_happun;
+pub mod wha_happun;
 
-use about::*;
-use laprate::*;
-use levelup::{delete::*, level::*, wlaw::*};
 use log::{error, info, warn};
-use lore::*;
-use recap::*;
 use serenity::{
     client::Context,
     framework::standard::{
         help_commands,
-        macros::{group, help, hook},
+        macros::{help, hook},
         Args, CommandGroup, CommandResult, HelpOptions,
     },
     model::{channel::Message, id::UserId},
 };
 pub use stalker::normal_message;
 use std::collections::HashSet;
-use wha_happun::*;
 
 #[help]
 #[command_not_found_text = "Could not find: '{}'."]
@@ -83,7 +73,3 @@ pub async fn after(
 pub async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_name: &str) {
     warn!("Could not find command '{}'", unknown_command_name);
 }
-
-#[group]
-#[commands(about, wha_happun, recap, laprate, wlaw, level, delete, lore)]
-pub struct General;
