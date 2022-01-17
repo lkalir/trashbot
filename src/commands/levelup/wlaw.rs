@@ -13,7 +13,12 @@ pub async fn wlaw(id: GuildId, campaign: Option<SmolStr>) -> String {
             .get(&(id, MySmolStr(campaign.clone())))
             .map_or_else(
                 || format!("No such campaign '{}", campaign),
-                |level| format!("'{}' is level {}", campaign, level),
+                |(level, date)| {
+                    format!(
+                        "'{campaign}' is level {level} since {}",
+                        date.date().format("%m/%d/%Y")
+                    )
+                },
             )
     } else {
         let camps: Vec<String> = LEVEL_MAP
@@ -27,7 +32,13 @@ pub async fn wlaw(id: GuildId, campaign: Option<SmolStr>) -> String {
                     None
                 }
             })
-            .map(|(campaign, level)| format!("'{}' is level {}", campaign.0, level))
+            .map(|(campaign, (level, date))| {
+                format!(
+                    "'{}' is level {level} since {}",
+                    campaign.0,
+                    date.date().format("%m/%d/%Y")
+                )
+            })
             .collect();
         let camps = camps.join("\n");
 

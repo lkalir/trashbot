@@ -3,6 +3,7 @@ pub mod delete;
 pub mod level;
 pub mod wlaw;
 
+use chrono::{DateTime, Local};
 use log::info;
 use once_cell::sync::Lazy;
 use serde::{
@@ -63,20 +64,21 @@ impl<'de> Deserialize<'de> for MySmolStr {
     }
 }
 
-static LEVEL_MAP: Lazy<Mutex<HashMap<(GuildId, MySmolStr), u8>>> = Lazy::new(|| {
-    let path = env::var("DB_LOCATION").unwrap_or_else(|_| "campaigndb.json".to_string());
-    let m = if let Ok(file) = std::fs::OpenOptions::new().read(true).open(&path) {
-        if let Ok(db) = serde_json::from_reader(file) {
-            info!("Loading level database from '{}'", path);
-            LevelMapRecord::vec_to_map(db)
+static LEVEL_MAP: Lazy<Mutex<HashMap<(GuildId, MySmolStr), (u8, DateTime<Local>)>>> =
+    Lazy::new(|| {
+        let path = env::var("DB_LOCATION").unwrap_or_else(|_| "campaigndb.json".to_string());
+        let m = if let Ok(file) = std::fs::OpenOptions::new().read(true).open(&path) {
+            if let Ok(db) = serde_json::from_reader(file) {
+                info!("Loading level database from '{}'", path);
+                LevelMapRecord::vec_to_map(db)
+            } else {
+                HashMap::new()
+            }
         } else {
             HashMap::new()
-        }
-    } else {
-        HashMap::new()
-    };
-    Mutex::new(m)
-});
+        };
+        Mutex::new(m)
+    });
 
 /// Intermediary data type  for (de)serialization
 #[derive(Serialize, Deserialize)]
@@ -84,36 +86,43 @@ struct LevelMapRecord {
     campaign: MySmolStr,
     id: GuildId,
     level: u8,
+    time: DateTime<Local>,
 }
 
 impl LevelMapRecord {
-    fn new(id: GuildId, campaign: MySmolStr, level: u8) -> Self {
+    fn new(id: GuildId, campaign: MySmolStr, level: u8, time: DateTime<Local>) -> Self {
         Self {
             campaign,
             id,
             level,
+            time,
         }
     }
 
     /// Prepares level database for serialization to disk
-    fn map_to_vec(hm: &HashMap<(GuildId, MySmolStr), u8>) -> Vec<Self> {
+    fn map_to_vec(hm: &HashMap<(GuildId, MySmolStr), (u8, DateTime<Local>)>) -> Vec<Self> {
         hm.iter()
-            .map(|((id, campaign), level)| Self::new(*id, campaign.clone(), *level))
+            .map(|((id, campaign), (level, stamp))| {
+                Self::new(*id, campaign.clone(), *level, *stamp)
+            })
             .collect()
     }
 
     /// Converts deserialized data back to in-memory db
-    fn vec_to_map(v: Vec<Self>) -> HashMap<(GuildId, MySmolStr), u8> {
+    fn vec_to_map(v: Vec<Self>) -> HashMap<(GuildId, MySmolStr), (u8, DateTime<Local>)> {
         let mut m = HashMap::new();
         v.iter().for_each(|record| {
-            m.insert((record.id, record.campaign.clone()), record.level);
+            m.insert(
+                (record.id, record.campaign.clone()),
+                (record.level, record.time),
+            );
         });
         m
     }
 }
 
 /// Saves campaign db to disk
-async fn save_db(hm: &HashMap<(GuildId, MySmolStr), u8>) -> Result<(), String> {
+async fn save_db(hm: &HashMap<(GuildId, MySmolStr), (u8, DateTime<Local>)>) -> Result<(), String> {
     let c = LevelMapRecord::map_to_vec(hm);
     let db = serde_json::to_string_pretty(&c);
     if let Err(why) = db {
